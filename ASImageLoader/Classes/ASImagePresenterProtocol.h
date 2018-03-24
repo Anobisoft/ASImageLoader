@@ -13,6 +13,6 @@
 - (void)setImage:(UIImage *)image;
 
 @optional
-@property (readonly) UIActivityIndicatorView *activityIndicator;
+- (UIActivityIndicatorView *)activityIndicator;
 
 @end

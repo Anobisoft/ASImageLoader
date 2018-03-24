@@ -7,21 +7,12 @@
 //
 
 #import "ASAppDelegate.h"
-#import <ASImageLoader/ASImageLoader.h>
+
 
 @implementation ASAppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    ASGraphQuery *query = [ASGraphQuery queryWithName:@"example"];
-    query.variables = @{
-                        @"episode" : @"JEDI"
-                        };
-    NSURL *APIURL = [NSURL URLWithString:@"https://api.github.com/graphql"];
-    ASImageLoader *client = [ASImageLoader clientWithURL:APIURL];
-    [client query:query
-                         fetchBlock:^(NSDictionary * _Nullable data, NSError * _Nullable error) {
-        NSLog(@"data: %@", data);
-    }];
+
     return YES;
 }
 

@@ -7,9 +7,10 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <AnobiKit/AKTypes.h>
 #import "ASImagePresenterProtocol.h"
 
-@interface ASImageLoader : NSObject
+@interface ASImageLoader : NSObject <Abstract>
 
 @property (class) NSTimeInterval requestTimeout;
 @property (class) NSUInteger cacheMemoryCapacity;
@@ -21,9 +22,5 @@
                   forCell:(id<ASImagePresenter>)cell
                    inView:(__weak UIView *)view // UITableView or UICollectionView
               atIndexPath:(NSIndexPath *)indexPath;
-
-+ (instancetype)new NS_UNAVAILABLE;
-+ (instancetype)allocWithZone:(struct _NSZone *)zone NS_UNAVAILABLE;
-+ (instancetype)alloc NS_UNAVAILABLE;
 
 @end

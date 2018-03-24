@@ -70,7 +70,7 @@ static NSCache *cache;
 #pragma mark -
 
 + (id)placeholder {
-    return self.placeholderImageName ? [UIImage imageNamed:self.placeholderImageName] : [NSNull null];
+    return self.placeholderImageName ? [UIImage imageNamed:self.placeholderImageName] : nil;
 }
 + (NSString *)placeholderImageName {
     return _placeholderImageName;
@@ -158,7 +158,7 @@ static NSUInteger _requestTimeout;
 
 + (UIImage *)imageFetch:(void (^)(UIImage *image, NSError *error))fetch withURL:(NSURL *)URL {
     if (!URL || [failedURLs containsObject:URL]) {
-        return self.placeholder;
+        return self.placeholder ?: [NSNull null];
     }
     
     UIImage *cachedImage = [cache objectForKey:URL];
@@ -205,8 +205,28 @@ static NSUInteger _requestTimeout;
 }
 
 
-+ (BOOL)imagePresenterHasActivityIndicator:(id<ASImagePresenter>)imagePresenter {
+BOOL ASImagePresenterHasActivityIndicator(id<ASImagePresenter> imagePresenter) {
     return [imagePresenter respondsToSelector:@selector(activityIndicator)] && imagePresenter.activityIndicator && [imagePresenter.activityIndicator isKindOfClass:[UIActivityIndicatorView class]];
+}
+
+void ASImagePresenterSetImage(id<ASImagePresenter> imagePresenter, UIImage *image) {
+    if ([image isKindOfClass:[UIImage class]]) {
+        [imagePresenter setImage:image];
+    } else {
+        [imagePresenter setImage:nil];
+    }
+}
+
+void ASImagePresenterStartAnimating(id<ASImagePresenter> imagePresenter) {
+    if (ASImagePresenterHasActivityIndicator(imagePresenter)) {
+        [imagePresenter.activityIndicator startAnimating];
+    }
+}
+
+void ASImagePresenterStopAnimating(id<ASImagePresenter> imagePresenter) {
+    if (ASImagePresenterHasActivityIndicator(imagePresenter)) {
+        [imagePresenter.activityIndicator stopAnimating];
+    }
 }
 
 + (void)imageFetchWithURL:(NSURL *)URL
@@ -219,11 +239,8 @@ static NSUInteger _requestTimeout;
                 id ipcell = [view cellAtIndexPath:indexPath];
                 if (ipcell) {
                     if ([ipcell conformsToProtocol:@protocol(ASImagePresenter)]) {
-                        id<ASImagePresenter> imagePresenter = ipcell;
-                        [imagePresenter setImage:image];
-                        if ([self imagePresenterHasActivityIndicator:imagePresenter]) {
-                            [imagePresenter.activityIndicator stopAnimating];
-                        }
+                        ASImagePresenterSetImage(ipcell, image);
+                        ASImagePresenterStopAnimating(ipcell);
                     }
                 } else {
                     [view reloadCellAtIndexPath:indexPath];
@@ -233,15 +250,11 @@ static NSUInteger _requestTimeout;
     } withURL:URL];
     if ([cell conformsToProtocol:@protocol(ASImagePresenter)]) {
         if (cachedImage) {
-            if ([self imagePresenterHasActivityIndicator:cell]) [cell.activityIndicator stopAnimating];
-            if ([cachedImage isKindOfClass:[UIImage class]]) {
-                [cell setImage:cachedImage];
-            } else {
-                [cell setImage:nil];
-            }
+            ASImagePresenterStopAnimating(cell);
+            ASImagePresenterSetImage(cell, cachedImage);
         } else {
-            if ([self imagePresenterHasActivityIndicator:cell]) [cell.activityIndicator startAnimating];
-            [cell setImage:self.placeholder];
+            ASImagePresenterStartAnimating(cell);
+            ASImagePresenterSetImage(cell, self.placeholder);
         }
     }
 }

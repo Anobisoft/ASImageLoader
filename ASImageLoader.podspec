@@ -20,6 +20,7 @@ DESC
   s.source_files  = "ASImageLoader/Classes/**/*.{h,m}"
   s.resources = "ASImageLoader/Resources/*.plist"
   s.framework  = "Foundation"
+  s.dependency 'AnobiKit', '~> 0.2.19'
   s.requires_arc = true
 
 end
