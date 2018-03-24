@@ -8,7 +8,8 @@
 [![License](https://img.shields.io/cocoapods/l/ASImageLoader.svg?style=flat)](http://cocoapods.org/pods/ASImageLoader)
 [![Twitter](https://img.shields.io/badge/twitter-@Anobisoft-blue.svg?style=flat)](http://twitter.com/Anobisoft)
 
-GraphQL Client
+ASImageLoader - helper for image loading with configurable cache.
+Equipped with automated function optimized for collections (UITableView and UICollectionView).
 
 ## Example
 
