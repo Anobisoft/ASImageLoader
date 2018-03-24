@@ -1,0 +1,13 @@
+platform :ios, '8.3'
+
+use_frameworks!
+
+target 'ASImageLoader_Example' do
+  pod 'ASImageLoader', :path => '../'
+
+  target 'ASImageLoader_Tests' do
+    inherit! :search_paths
+
+    
+  end
+end
