@@ -7,7 +7,7 @@
 //
 
 #import "ASImageLoader.h"
-#import <AnobiKit/AKConfigManager.h>
+#import <AnobiKit/AnobiKit.h>
 
 #define ASImageLoaderDefaults_requestTimeout 30
 #define ASImageLoaderDefaults_cacheMemoryCapacity 4 * 0x100000
@@ -58,33 +58,45 @@
 #pragma mark -
 
 @interface ASImageLoader()
-@property (class, readonly) id placeholder;
+@property (readonly) id placeholder;
+@property (readonly) NSMutableSet *failedURLs;
+@property (readonly) NSCache *cache;
 @end
 
-@implementation ASImageLoader
+@implementation ASImageLoader {
+    NSString *_placeholderImageName;
+}
 
-static NSString *_placeholderImageName;
-static NSMutableSet *failedURLs;
-static NSCache *cache;
+@synthesize cacheMemoryCapacity = _cacheMemoryCapacity;
+@synthesize failedURLs = _failedURLs;
+@synthesize cache = _cache;
+
++ (instancetype)defaultLoader {
+    static id defaultInstance = nil;
+    dispatch_syncmain(^{
+        if (!defaultInstance) {
+            defaultInstance = [self new];
+        }        
+    });
+    return defaultInstance;
+}
 
 #pragma mark -
 
-+ (id)placeholder {
+- (id)placeholder {
     return self.placeholderImageName ? [UIImage imageNamed:self.placeholderImageName] : nil;
 }
-+ (NSString *)placeholderImageName {
+- (NSString *)placeholderImageName {
     return _placeholderImageName;
 }
-+ (void)setPlaceholderImageName:(NSString *)placeholderImageName {
+- (void)setPlaceholderImageName:(NSString *)placeholderImageName {
     _placeholderImageName = placeholderImageName;
 }
 
-
-static NSUInteger _cacheMemoryCapacity;
-+ (NSUInteger)cacheMemoryCapacity {
+- (NSUInteger)cacheMemoryCapacity {
     return _cacheMemoryCapacity;
 }
-+ (void)setCacheMemoryCapacity:(NSUInteger)cacheMemoryCapacity {
+- (void)setCacheMemoryCapacity:(NSUInteger)cacheMemoryCapacity {
     if (cacheMemoryCapacity != _cacheMemoryCapacity) {
         _cacheMemoryCapacity = cacheMemoryCapacity;
         [self configureCache];
@@ -92,76 +104,78 @@ static NSUInteger _cacheMemoryCapacity;
 }
 
 static NSUInteger _cacheDiskCapacity;
-+ (NSUInteger)cacheDiskCapacity {
+- (NSUInteger)cacheDiskCapacity {
     return _cacheDiskCapacity;
 }
-+ (void)setCacheDiskCapacity:(NSUInteger)cacheDiskCapacity {
+- (void)setCacheDiskCapacity:(NSUInteger)cacheDiskCapacity {
     if (cacheDiskCapacity != _cacheDiskCapacity) {
         _cacheDiskCapacity = cacheDiskCapacity;
         [self configureCache];
     }
 }
 
-+ (void)configureCache  {
+- (void)configureCache  {
     NSURLCache *sharedCache = [[NSURLCache alloc] initWithMemoryCapacity:self.cacheMemoryCapacity diskCapacity:self.cacheDiskCapacity diskPath:nil];
     [NSURLCache setSharedURLCache:sharedCache];
 }
 
 static NSUInteger _requestTimeout;
-+ (NSTimeInterval)requestTimeout {
+- (NSTimeInterval)requestTimeout {
     return _requestTimeout;
 }
-+ (void)setRequestTimeout:(NSTimeInterval)requestTimeout {
+- (void)setRequestTimeout:(NSTimeInterval)requestTimeout {
     if (requestTimeout > 0) _requestTimeout = requestTimeout;
 }
 
 
 #pragma mark -
 
-+ (void)initialize {
-    [super initialize];
-    self.requestTimeout = ASImageLoaderDefaults_requestTimeout;
-    _cacheMemoryCapacity = ASImageLoaderDefaults_cacheMemoryCapacity;
-    _cacheDiskCapacity = ASImageLoaderDefaults_cacheDiskCapacity;
-    
-    @try {
-        NSDictionary *config = [[AKConfigManager manager] configWithName:self.class.description];
-        if (config) {
-            NSNumber *timeoutNumber = config[@"requestTimeout"];
-            if (timeoutNumber) {
-                NSTimeInterval timepout = timeoutNumber.doubleValue;
-                if (timepout > 0) {
-                    self.requestTimeout = timepout;
+- (instancetype)init {
+    if (self = [super init]) {
+        self.requestTimeout = ASImageLoaderDefaults_requestTimeout;
+        _cacheMemoryCapacity = ASImageLoaderDefaults_cacheMemoryCapacity;
+        _cacheDiskCapacity = ASImageLoaderDefaults_cacheDiskCapacity;
+        
+        @try {
+            NSDictionary *config = [[AKConfigManager manager] configWithName:self.class.description];
+            if (config) {
+                NSNumber *timeoutNumber = config[@"requestTimeout"];
+                if (timeoutNumber) {
+                    NSTimeInterval timepout = timeoutNumber.doubleValue;
+                    if (timepout > 0) {
+                        self.requestTimeout = timepout;
+                    }
+                }
+                
+                NSNumber *cacheMemoryCapacityNumber = config[@"cacheMemoryCapacity"];
+                if (cacheMemoryCapacityNumber) {
+                    NSUInteger cacheMemoryCapacity = cacheMemoryCapacityNumber.unsignedIntegerValue;
+                    _cacheMemoryCapacity = cacheMemoryCapacity;
+                }
+                NSNumber *cacheDiskCapacityNumber = config[@"cacheDiskCapacity"];
+                if (cacheDiskCapacityNumber) {
+                    NSUInteger cacheDiskCapacity = cacheDiskCapacityNumber.unsignedIntegerValue;
+                    _cacheDiskCapacity = cacheDiskCapacity;
                 }
             }
-            
-            NSNumber *cacheMemoryCapacityNumber = config[@"cacheMemoryCapacity"];
-            if (cacheMemoryCapacityNumber) {
-                NSUInteger cacheMemoryCapacity = cacheMemoryCapacityNumber.unsignedIntegerValue;
-                _cacheMemoryCapacity = cacheMemoryCapacity;
-            }
-            NSNumber *cacheDiskCapacityNumber = config[@"cacheDiskCapacity"];
-            if (cacheDiskCapacityNumber) {
-                NSUInteger cacheDiskCapacity = cacheDiskCapacityNumber.unsignedIntegerValue;
-                _cacheDiskCapacity = cacheDiskCapacity;
-            }
+        } @catch (NSException *exception) {
+            NSLog(@"[ERROR] Exception: %@", exception);
+        } @finally {
+            [self configureCache];
         }
-    } @catch (NSException *exception) {
-        NSLog(@"[ERROR] Exception: %@", exception);
-    } @finally {
-        [self configureCache];
     }
+    return self;
 }
 
 
 #pragma mark -
 
-+ (UIImage *)imageFetch:(void (^)(UIImage *image, NSError *error))fetch withURL:(NSURL *)URL {
-    if (!URL || [failedURLs containsObject:URL]) {
+- (UIImage *)imageFetch:(void (^)(UIImage *image, NSError *error))fetch withURL:(NSURL *)URL {
+    if (!URL || [self.failedURLs containsObject:URL]) {
         return self.placeholder ?: [NSNull null];
     }
     
-    UIImage *cachedImage = [cache objectForKey:URL];
+    UIImage *cachedImage = [self.cache objectForKey:URL];
     if (cachedImage) {
         return cachedImage;
     }
@@ -173,7 +187,7 @@ static NSUInteger _requestTimeout;
         if (data) {
             UIImage *image = [UIImage imageWithData:data];
             if (image) {
-                [cache setObject:image forKey:URL];
+                [self.cache setObject:image forKey:URL];
                 return image;
             }
         }
@@ -183,7 +197,7 @@ static NSUInteger _requestTimeout;
         if (error) {
             NSLog(@"[ERROR] %@", error);
             if (error.code == NSURLErrorUnsupportedURL) {
-                [failedURLs addObject:URL];
+                [self.failedURLs addObject:URL];
             }
         }
         if (fetch) {
@@ -191,7 +205,7 @@ static NSUInteger _requestTimeout;
             @try {
                 if (data) {
                     image = [UIImage imageWithData:data];
-                    if (image) [cache setObject:image forKey:URL];                    
+                    if (image) [self.cache setObject:image forKey:URL];
                 }
             } @catch (NSException *exception) {
                 NSLog(@"[ERROR] Exception: %@", exception);
@@ -229,7 +243,7 @@ void ASImagePresenterStopAnimating(id<ASImagePresenter> imagePresenter) {
     }
 }
 
-+ (void)imageFetchWithURL:(NSURL *)URL
+- (void)imageFetchWithURL:(NSURL *)URL
                   forCell:(id<ASImagePresenter>)cell
                    inView:(__weak UIView *)view
               atIndexPath:(NSIndexPath *)indexPath {

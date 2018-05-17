@@ -55,7 +55,7 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     UITableViewCell<ASImagePresenter> *cell = [tableView dequeueReusableCellWithIdentifier:@"image" forIndexPath:indexPath];
     NSURL *URL = [NSURL URLWithString:self.content[indexPath.row]];
-    [ASImageLoader imageFetchWithURL:URL forCell:cell inView:tableView atIndexPath:indexPath];
+    [[ASImageLoader defaultLoader] imageFetchWithURL:URL forCell:cell inView:tableView atIndexPath:indexPath];
     return cell;
 }
 

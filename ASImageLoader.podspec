@@ -2,7 +2,7 @@
 Pod::Spec.new do |s|
 
   s.name             = 'ASImageLoader'
-  s.version          = '0.1.0'
+  s.version          = '0.2.0'
   s.summary          = 'ASImageLoader - automated image loader'
 
   s.description      = <<-DESC
@@ -20,7 +20,7 @@ DESC
   s.source_files  = "ASImageLoader/Classes/**/*.{h,m}"
   s.resources = "ASImageLoader/Resources/*.plist"
   s.framework  = "Foundation"
-  s.dependency 'AnobiKit', '~> 0.2.19'
+  s.dependency 'AnobiKit', '~> 0.3.1'
   s.requires_arc = true
 
 end
