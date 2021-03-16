@@ -2,11 +2,9 @@
 
 [![CI Status](http://img.shields.io/travis/Anobisoft/ASImageLoader.svg?style=flat)](https://travis-ci.org/Anobisoft/ASImageLoader)
 [![Version](https://img.shields.io/cocoapods/v/ASImageLoader.svg?style=flat)](http://cocoapods.org/pods/ASImageLoader)
-[![Downloads](https://img.shields.io/cocoapods/dt/ASImageLoader.svg)](http://cocoapods.org/pods/ASImageLoader)
 [![Platform](https://img.shields.io/cocoapods/p/ASImageLoader.svg?style=flat)](http://cocoapods.org/pods/ASImageLoader)
 [![Language](https://img.shields.io/github/languages/top/Anobisoft/ASImageLoader.svg)](https://github.com/Anobisoft/ASImageLoader)
 [![License](https://img.shields.io/cocoapods/l/ASImageLoader.svg?style=flat)](http://cocoapods.org/pods/ASImageLoader)
-[![Twitter](https://img.shields.io/badge/twitter-@Anobisoft-blue.svg?style=flat)](http://twitter.com/Anobisoft)
 
 ASImageLoader - helper for image loading with configurable cache.
 Equipped with automated function optimized for collections (UITableView and UICollectionView).
