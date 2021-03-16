@@ -14,34 +14,38 @@
 #define ASImageLoaderDefaults_cacheDiskCapacity 64 * 0x100000
 
 #pragma mark - UIView
-#pragma mark -
 
 @interface UIView (ASImageLoader)
+    
 - (id)cellAtIndexPath:(NSIndexPath *)ip;
 - (void)reloadCellAtIndexPath:(NSIndexPath *)ip;
+
 @end
 
 #pragma mark - UITableView
-#pragma mark -
 
 @implementation UITableView (ASImageLoader)
+    
 - (id)cellAtIndexPath:(NSIndexPath *)ip {
     return [self cellForRowAtIndexPath:ip];
 }
+
 - (void)reloadCellAtIndexPath:(NSIndexPath *)ip {
     [self beginUpdates];
     [self reloadRowsAtIndexPaths:@[ip] withRowAnimation:UITableViewRowAnimationAutomatic];
     [self endUpdates];
 }
+
 @end
 
 #pragma mark - UICollectionView
-#pragma mark -
 
 @implementation UICollectionView (ASImageLoader)
+    
 - (id)cellAtIndexPath:(NSIndexPath *)ip {
     return [self cellForItemAtIndexPath:ip];
 }
+
 - (void)reloadCellAtIndexPath:(NSIndexPath *)ip {
     @try {
         [self reloadItemsAtIndexPaths:@[ip]];
@@ -52,24 +56,25 @@
         });
     }
 }
+
 @end
 
-#pragma mark - ASImageLoader
 #pragma mark -
+#pragma mark - ASImageLoader
 
 @interface ASImageLoader()
-@property (readonly) id placeholder;
+
 @property (readonly) NSMutableSet *failedURLs;
 @property (readonly) NSCache *cache;
+
 @end
 
-@implementation ASImageLoader {
-    NSString *_placeholderImageName;
-}
+@implementation ASImageLoader
 
 @synthesize cacheMemoryCapacity = _cacheMemoryCapacity;
 @synthesize failedURLs = _failedURLs;
 @synthesize cache = _cache;
+
 
 + (instancetype)defaultLoader {
     static id defaultInstance = nil;
@@ -81,21 +86,12 @@
     return defaultInstance;
 }
 
-#pragma mark -
-
-- (id)placeholder {
-    return self.placeholderImageName ? [UIImage imageNamed:self.placeholderImageName] : nil;
-}
-- (NSString *)placeholderImageName {
-    return _placeholderImageName;
-}
-- (void)setPlaceholderImageName:(NSString *)placeholderImageName {
-    _placeholderImageName = placeholderImageName;
-}
+#pragma mark - Cache
 
 - (NSUInteger)cacheMemoryCapacity {
     return _cacheMemoryCapacity;
 }
+
 - (void)setCacheMemoryCapacity:(NSUInteger)cacheMemoryCapacity {
     if (cacheMemoryCapacity != _cacheMemoryCapacity) {
         _cacheMemoryCapacity = cacheMemoryCapacity;
@@ -104,9 +100,11 @@
 }
 
 static NSUInteger _cacheDiskCapacity;
+
 - (NSUInteger)cacheDiskCapacity {
     return _cacheDiskCapacity;
 }
+
 - (void)setCacheDiskCapacity:(NSUInteger)cacheDiskCapacity {
     if (cacheDiskCapacity != _cacheDiskCapacity) {
         _cacheDiskCapacity = cacheDiskCapacity;
@@ -119,10 +117,14 @@ static NSUInteger _cacheDiskCapacity;
     [NSURLCache setSharedURLCache:sharedCache];
 }
 
+#pragma mark - Request timeout
+
 static NSUInteger _requestTimeout;
+
 - (NSTimeInterval)requestTimeout {
     return _requestTimeout;
 }
+
 - (void)setRequestTimeout:(NSTimeInterval)requestTimeout {
     if (requestTimeout > 0) _requestTimeout = requestTimeout;
 }
@@ -247,21 +249,22 @@ void ASImagePresenterStopAnimating(id<ASImagePresenter> imagePresenter) {
                   forCell:(id<ASImagePresenter>)cell
                    inView:(__weak UIView *)view
               atIndexPath:(NSIndexPath *)indexPath {
+
     UIImage *cachedImage = [self imageFetch:^(UIImage *image, NSError *error) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            if (view) {
-                id ipcell = [view cellAtIndexPath:indexPath];
-                if (ipcell) {
-                    if ([ipcell conformsToProtocol:@protocol(ASImagePresenter)]) {
-                        ASImagePresenterSetImage(ipcell, image);
-                        ASImagePresenterStopAnimating(ipcell);
-                    }
-                } else {
-                    [view reloadCellAtIndexPath:indexPath];
-                }
+            if (view == nil) return;
+            id ipcell = [view cellAtIndexPath:indexPath];
+            if (ipcell == nil) {
+                [view reloadCellAtIndexPath:indexPath];
+                return;
+            }
+            if ([ipcell conformsToProtocol:@protocol(ASImagePresenter)]) {
+                ASImagePresenterSetImage(ipcell, image);
+                ASImagePresenterStopAnimating(ipcell);
             }
         });
     } withURL:URL];
+                  
     if ([cell conformsToProtocol:@protocol(ASImagePresenter)]) {
         if (cachedImage) {
             ASImagePresenterStopAnimating(cell);
